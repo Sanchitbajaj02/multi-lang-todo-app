@@ -8,6 +8,21 @@
     <h1>Todo Application</h1>
 
     <div>
+        <form action="/" method="post">
+            <div>
+                <label for="title">Enter the title</label>
+                <input type="text" name="title" id="title" placeholder="Add a task..." required>
+            </div>
+            <div>
+                <label for="description">Enter description</label>
+                <input type="text" name="description" id="description" placeholder="Add description..." required>
+            </div>
+
+            <div>
+                <button type="submit">Add Task</button>
+            </div>
+        </form>
+
         <th:block th:each="task: ${tasks}">
             <div>
                 <span th:text="${task.title}">
