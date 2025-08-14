@@ -9,6 +9,7 @@ import java.util.List;
 @Service
 public class TaskService {
     private final TaskRepository taskRepository;
+
     public TaskService(TaskRepository taskRepository) {
         this.taskRepository = taskRepository;
     }
@@ -22,6 +23,18 @@ public class TaskService {
         task.setTitle(title);
         task.setDescription(description);
         task.setCompleted(false);
+        taskRepository.save(task);
+    }
+
+    public void deleteTask(Long taskId) {
+        taskRepository.deleteById(taskId);
+    }
+
+    public void toggleTask(Long taskId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid Task ID provided"));
+
+        task.setCompleted(!task.isCompleted());
         taskRepository.save(task);
     }
 }

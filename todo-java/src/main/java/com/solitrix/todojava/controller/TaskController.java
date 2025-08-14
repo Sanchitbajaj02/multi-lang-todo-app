@@ -2,12 +2,10 @@ package com.solitrix.todojava.controller;
 
 import com.solitrix.todojava.model.Task;
 import com.solitrix.todojava.services.TaskService;
+import jakarta.websocket.server.PathParam;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -30,6 +28,18 @@ public class TaskController {
     @PostMapping
     public String createTask(@RequestParam String title, @RequestParam String description) {
         taskService.createTask(title, description);
+        return "redirect:/";
+    }
+
+    @GetMapping("/{taskId}/delete")
+    public String deleteTask(@PathVariable Long taskId) {
+        taskService.deleteTask(taskId);
+        return "redirect:/";
+    }
+
+    @GetMapping("/{taskId}/toggle")
+    public String toggleTask(@PathVariable Long taskId) {
+        taskService.toggleTask(taskId);
         return "redirect:/";
     }
 }
