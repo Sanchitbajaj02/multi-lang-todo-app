@@ -1,14 +1,15 @@
 {
   "name": "todo-ts",
   "version": "1.0.0",
-  "description": "A new Express TypeScript application",
+  "description": "A todo application built on typescript + express",
   "main": "src/server.ts",
   "scripts": {
     "format": "prettier --write src/*/**",
     "dev": "tsc-watch --onsuccess \"node dist/server.js\"",
     "build": "rimraf dist && npx tsc",
     "prestart": "npm run build",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "clean": "rimraf .git && git init"
   },
   "author": "@sanchitbajaj02",
   "license": "MIT",
