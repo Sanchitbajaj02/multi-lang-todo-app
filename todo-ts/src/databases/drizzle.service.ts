@@ -4,6 +4,7 @@ import CustomError from "@/lib/custom-error";
 import { Logger } from "winston";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
+import * as schema from "@/model/schema";
 
 export default class DrizzleConnection implements IDatabaseClient {
   private connected = false;
@@ -49,7 +50,13 @@ export default class DrizzleConnection implements IDatabaseClient {
         database: connectionDatabase,
       });
 
-      this.connection = drizzle({ client: mysqlConnection });
+      this.connection = drizzle(
+        mysqlConnection,
+        {
+          schema: schema,
+          mode: "default",
+        }
+      );
 
       this.connected = true;
       this.logger.info("Database connected successfully");
@@ -90,13 +97,14 @@ export default class DrizzleConnection implements IDatabaseClient {
    * Get the database connection
    * @returns Promise<any>
    */
-  async getConnection(): Promise<any> {
+  getConnection(): Promise<any> {
     if (!this.connected) {
       throw new CustomError(
         StatusCodes.INTERNAL_SERVER_ERROR,
         "Database not connected"
       );
     }
+    
     /**
      * Return the actual database connection here
      */
