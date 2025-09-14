@@ -6,6 +6,12 @@ Currently, I am planning for only TypeScript (Express) & Java (Spring Boot) but 
 
 > Note: The typecript + express repo is developed using `node-typescript-gen` package
 
+## Environment Requirements
+
+Node: >= v22.x
+
+Java: >= v21.x
+
 ## Routes
 
 The routes in this application is as follows:
