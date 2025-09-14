@@ -1,19 +1,23 @@
 package com.solitrix.todojava.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jdk.jfr.Timestamp;
+import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
+@Table(name = "tasks")
 @Data
 public class Task {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(length = 36)
+    private String id;
+
+    @Column(length = 100, nullable = false)
     private String title;
+
+    @Column(length = 255)
     private String description;
+
+    @Column(columnDefinition = "TINYINT(1)")
     private boolean completed;
 }

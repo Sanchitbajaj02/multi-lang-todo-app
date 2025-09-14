@@ -5,6 +5,7 @@ import com.solitrix.todojava.repository.TaskRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class TaskService {
@@ -26,11 +27,11 @@ public class TaskService {
         taskRepository.save(task);
     }
 
-    public void deleteTask(Long taskId) {
+    public void deleteTask(String taskId) {
         taskRepository.deleteById(taskId);
     }
 
-    public void toggleTask(Long taskId) {
+    public void toggleTask(String taskId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Task ID provided"));
 

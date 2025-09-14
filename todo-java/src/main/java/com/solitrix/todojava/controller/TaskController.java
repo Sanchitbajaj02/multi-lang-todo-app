@@ -8,6 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @Controller
 //@RequestMapping("/tasks")
@@ -32,13 +33,13 @@ public class TaskController {
     }
 
     @GetMapping("/{taskId}/delete")
-    public String deleteTask(@PathVariable Long taskId) {
+    public String deleteTask(@PathVariable String taskId) {
         taskService.deleteTask(taskId);
         return "redirect:/";
     }
 
     @GetMapping("/{taskId}/toggle")
-    public String toggleTask(@PathVariable Long taskId) {
+    public String toggleTask(@PathVariable String taskId) {
         taskService.toggleTask(taskId);
         return "redirect:/";
     }
