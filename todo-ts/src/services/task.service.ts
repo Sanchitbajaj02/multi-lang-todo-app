@@ -2,6 +2,7 @@ import { Dependencies } from "@/container/di.container";
 import CustomError from "@/lib/custom-error";
 import { taskSchema } from "@/model/schema";
 import { StatusCodes } from "http-status-codes";
+import crypto from "crypto";
 
 export default class TaskService {
   private dbClient: any;
@@ -19,11 +20,16 @@ export default class TaskService {
 
     await this.dbClient
       .insert(taskSchema)
-      .values({ title, description })
+      .values({
+        id: crypto.randomUUID(),
+        title,
+        description,
+        completed: false,
+      })
       .execute();
   };
 
-  deleteTask = async (id: number) => {
+  deleteTask = async (id: string) => {
     this.dbClient = await this.deps.databaseService.getConnection();
 
     // check if task exists
@@ -36,7 +42,7 @@ export default class TaskService {
     await this.dbClient.delete(taskSchema).where({ id }).execute();
   };
 
-  toggleTask = async (id: number) => {
+  toggleTask = async (id: string) => {
     this.dbClient = await this.deps.databaseService.getConnection();
 
     const task = await this.dbClient.select().from(taskSchema).where({ id });

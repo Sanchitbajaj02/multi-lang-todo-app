@@ -42,7 +42,7 @@ export default class TaskController {
     }
 
     try {
-      await this.taskService.deleteTask(Number(id));
+      await this.taskService.deleteTask(id);
       res.status(200).json({
         message: "Task deleted successfully",
       });
@@ -59,7 +59,7 @@ export default class TaskController {
     }
 
     try {
-      const currentStatus = await this.taskService.toggleTask(Number(id));
+      const currentStatus = await this.taskService.toggleTask(id);
       res.status(200).json({
         message: `Task has been marked as ${currentStatus ? "completed" : "incomplete"}`,
       });
