@@ -18,7 +18,11 @@ config.rateLimit = {
 };
 config.database = {
   connectionURL: getEnv<string>("DATABASE_URL", ""),
-  connectionType: getEnv<string>("DATABASE_TYPE", "mongodb"),
+  connectionType: getEnv<string>("DATABASE_TYPE", "mysql"),
+  connectionHost: getEnv<string>("DB_CONNECTION_HOST", "localhost"),
+  connectionUser: getEnv<string>("DB_USER", "user"),
+  connectionPassword: getEnv<string>("DB_PASSWORD", "12345678"),
+  connectionDatabase: getEnv<string>("DB_NAME", "todo-app"),
 };
 
 config.security = {
