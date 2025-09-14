@@ -56,7 +56,7 @@ export default class AppFactory {
     const taskService = new TaskService(this.deps);
     const taskController = new TaskController(taskService, this.deps);
     const todoRouter = new TodoRouter(taskController);
-    app.use("/todos", todoRouter.router);
+    app.use("/taskId", todoRouter.router);
 
     app.get("/", (req, res) => {
       res.json({

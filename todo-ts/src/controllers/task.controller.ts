@@ -36,13 +36,13 @@ export default class TaskController {
   };
 
   deleteTask = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    if (!id) {
+    const { taskId } = req.params;
+    if (!taskId) {
       return res.status(400).json({ error: "Task ID is required" });
     }
 
     try {
-      await this.taskService.deleteTask(id);
+      await this.taskService.deleteTask(taskId);
       res.status(200).json({
         message: "Task deleted successfully",
       });
@@ -53,13 +53,13 @@ export default class TaskController {
   };
 
   toggleTask = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    if (!id) {
+    const { taskId } = req.params;
+    if (!taskId) {
       return res.status(400).json({ error: "Task ID is required" });
     }
 
     try {
-      const currentStatus = await this.taskService.toggleTask(id);
+      const currentStatus = await this.taskService.toggleTask(taskId);
       res.status(200).json({
         message: `Task has been marked as ${currentStatus ? "completed" : "incomplete"}`,
       });

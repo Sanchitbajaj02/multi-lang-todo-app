@@ -14,8 +14,8 @@ export default class TodoRouter {
 
     this.router.post("/", this.taskController.createTask);
 
-    this.router.delete("/:id/delete", this.taskController.deleteTask);
+    this.router.delete("/:taskId/delete", this.taskController.deleteTask);
 
-    this.router.patch("/:id/toggle", this.taskController.toggleTask);
+    this.router.patch("/:taskId/toggle", this.taskController.toggleTask);
   }
 }

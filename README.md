@@ -4,10 +4,16 @@ In this repository, I am going to build a basic todo application using different
 
 Currently, I am planning for only TypeScript (Express) & Java (Spring Boot) but I might add a few more.
 
+> Note: The typecript + express repo is developed using `node-typescript-gen` package
+
 ## Routes
 
-There is going to be 2 major routex i.e., user routes and todo routes.
+The routes in this application is as follows:
 
-### User Routes
+POST: /tasks
 
-### Todo Routes
+GET: /tasks
+
+PATCH: /tasks/:taskId/toggle
+
+DELETE: /tasks/:taskId/delete
