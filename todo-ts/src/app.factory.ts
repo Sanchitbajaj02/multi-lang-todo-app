@@ -5,11 +5,15 @@ import MorganLogger from "@/middleware/morgan-middleware";
 import ErrorHandler from "@/middleware/error-handler";
 import ServerProtection from "@/middleware/service-protection";
 
+import TodoRouter from "@/routes/task.routes";
+import TaskService from "@/services/task.service";
+import TaskController from "@/controllers/task.controller";
+
 export default class AppFactory {
   constructor(private deps: Dependencies) {}
 
   public createApp(): Express {
-    const { logger, config, databaseService } = this.deps;
+    const { logger, config } = this.deps;
 
     const app: Express = express();
 
@@ -49,6 +53,11 @@ export default class AppFactory {
     app.use(serviceProtection.miscProtection());
 
     // Routes
+    const taskService = new TaskService(this.deps);
+    const taskController = new TaskController(taskService, this.deps);
+    const todoRouter = new TodoRouter(taskController);
+    app.use("/todos", todoRouter.router);
+
     app.get("/", (req, res) => {
       res.json({
         message: "Welcome to the application!!",
