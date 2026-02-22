@@ -1,5 +1,9 @@
+import "reflect-metadata";
 import "dotenv/config";
-import "module-alias/register";
+
+// Import container configuration (must be after reflect-metadata)
+// import "@/container";
+
 import { DIContainer } from "@/container/di.container";
 import AppFactory from "@/app.factory";
 
