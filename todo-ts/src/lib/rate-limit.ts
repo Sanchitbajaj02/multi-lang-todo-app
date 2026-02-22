@@ -34,7 +34,7 @@ export default class RateLimit {
       standardHeaders: "draft-7",
       validate: true,
       handler: (req, res) => {
-        this.logger.warn(`Too many requests from this IP, please try again after ${this.windowSize / 1000} seconds`)
+        this.logger.warn(`Too many requests from this IP, please try again after ${this.windowSize / 1000} seconds`);
         res.status(StatusCodes.TOO_MANY_REQUESTS).json({
           message: `Too many requests from this IP, please try again after ${this.windowSize / 1000} seconds`,
         });

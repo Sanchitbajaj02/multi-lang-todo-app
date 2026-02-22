@@ -1,21 +1,16 @@
+import { container } from "tsyringe";
 import TaskController from "@/controllers/task.controller";
 import { Router } from "express";
+import type { IRouter } from "express";
 
-export default class TodoRouter {
-  public router = Router();
+// Resolve controller from DI container
+const taskController = container.resolve(TaskController);
 
-  constructor(private taskController: TaskController) {
-    this.initializeRoutes();
-  }
+const router: IRouter = Router();
 
-  private initializeRoutes() {
-    // Define your routes here
-    this.router.get("/", this.taskController.getTasks);
+router.get("/", taskController.getTasks);
+router.post("/", taskController.createTask);
+router.delete("/:taskId/delete", taskController.deleteTask);
+router.patch("/:taskId/toggle", taskController.toggleTask);
 
-    this.router.post("/", this.taskController.createTask);
-
-    this.router.delete("/:taskId/delete", this.taskController.deleteTask);
-
-    this.router.patch("/:taskId/toggle", this.taskController.toggleTask);
-  }
-}
+export default router;

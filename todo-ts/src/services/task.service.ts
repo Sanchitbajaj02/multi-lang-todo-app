@@ -1,62 +1,88 @@
-import { Dependencies } from "@/container/di.container";
 import CustomError from "@/lib/custom-error";
 import { taskSchema } from "@/model/schema";
 import { StatusCodes } from "http-status-codes";
 import crypto from "crypto";
+import { BaseService } from "./base.service";
+import { inject, injectable } from "tsyringe";
+import { TOKENS } from "@/container/tokens";
+import type { IDrizzleService } from "@/databases/drizzle.service";
+import type { ILoggerService } from "@/logger/logger.service";
+import { eq } from "drizzle-orm";
 
-export default class TaskService {
-  private dbClient: any;
-  constructor(private deps: Dependencies) {}
+export interface Task {
+  id: string;
+  title: string;
+  description?: string | null;
+  completed?: boolean | null;
+}
 
-  getAllTasks = async () => {
-    this.dbClient = await this.deps.databaseService.getConnection();
+export interface ITaskService {
+  getAllTasks(): Promise<Task[]>;
+  createTask(title: string, description?: string | null): Promise<void>;
+  deleteTask(id: string): Promise<void>;
+  toggleTask(id: string): Promise<boolean>;
+}
 
-    const tasks = await this.dbClient.select().from(taskSchema);
+@injectable()
+export default class TaskService extends BaseService implements ITaskService {
+  constructor(
+    @inject(TOKENS.Logger) logger: ILoggerService,
+    @inject(TOKENS.DrizzleClient) databaseService: IDrizzleService
+  ) {
+    super(logger, databaseService);
+  }
+
+  getAllTasks = async (): Promise<Task[]> => {
+    const tasks = (await this.dbClient.select().from(taskSchema)) as Task[];
     return tasks;
   };
 
-  createTask = async (title: string, description: string) => {
-    this.dbClient = await this.deps.databaseService.getConnection();
-
+  createTask = async (title: string, description?: string | null): Promise<void> => {
     await this.dbClient
       .insert(taskSchema)
       .values({
         id: crypto.randomUUID(),
         title,
-        description,
+        description: description ?? null,
         completed: false,
       })
       .execute();
   };
 
   deleteTask = async (id: string) => {
-    this.dbClient = await this.deps.databaseService.getConnection();
-
     // check if task exists
-    const task = await this.dbClient.select().from(taskSchema).where({ id });
+    const task = (await this.dbClient
+      .select()
+      .from(taskSchema)
+      .where(eq(taskSchema.id, id))) as Task[];
 
     if (task.length === 0) {
       throw new CustomError(StatusCodes.NOT_FOUND, "Task not found");
     }
 
-    await this.dbClient.delete(taskSchema).where({ id }).execute();
+    await this.dbClient.delete(taskSchema).where(eq(taskSchema.id, id)).execute();
   };
 
-  toggleTask = async (id: string) => {
-    this.dbClient = await this.deps.databaseService.getConnection();
-
-    const task = await this.dbClient.select().from(taskSchema).where({ id });
+  toggleTask = async (id: string): Promise<boolean> => {
+    const task = (await this.dbClient
+      .select()
+      .from(taskSchema)
+      .where(eq(taskSchema.id, id))) as Task[];
 
     if (task.length === 0) {
       throw new CustomError(StatusCodes.NOT_FOUND, "Task not found");
     }
+
+    const existing = task[0]!;
+    const currentCompleted = Boolean(existing.completed);
+    const newCompleted = !currentCompleted;
 
     await this.dbClient
       .update(taskSchema)
-      .set({ completed: !task[0].completed })
-      .where({ id })
+      .set({ completed: newCompleted })
+      .where(eq(taskSchema.id, id))
       .execute();
 
-    return !task[0].completed;
+    return newCompleted;
   };
 }

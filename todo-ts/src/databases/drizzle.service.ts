@@ -1,113 +1,66 @@
-import { IDatabaseClient } from "@/types/database.types";
-import { StatusCodes } from "http-status-codes";
-import CustomError from "@/lib/custom-error";
-import { Logger } from "winston";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle, MySql2Database } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 import * as schema from "@/model/schema";
+import { inject, singleton } from "tsyringe";
 
-export default class DrizzleConnection implements IDatabaseClient {
-  private connected = false;
-  private logger: Logger;
-  private config: any;
-  private connection: any;
+import { TOKENS } from "@/container/tokens";
+import type { ILoggerService } from "@/logger/logger.service";
+import type { IConfigService } from "@/config/config.service";
 
-  constructor(logger: Logger, config: any) {
-    this.logger = logger;
-    this.config = config;
+export interface IDrizzleService {
+  getClient(): MySql2Database<typeof schema>;
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+}
+
+@singleton()
+export default class DrizzleService implements IDrizzleService {
+  private drizzle!: MySql2Database<typeof schema>;
+  private pool!: mysql.Pool;
+
+  constructor(
+    @inject(TOKENS.Logger) private logger: ILoggerService,
+    @inject(TOKENS.Config) private configService: IConfigService
+  ) {}
+
+  getClient(): MySql2Database<typeof schema> {
+    return this.drizzle;
   }
 
-  /**
-   * @param connectionURL string
-   * @param connectionType string
-   * @param params any
-   */
-  async createConnection(): Promise<any> {
+  async connect(): Promise<void> {
     try {
-      const {
-        connectionHost,
-        connectionUser,
-        connectionPassword,
-        connectionDatabase,
-      } = this.config.database;
-
-      if (!connectionHost || !connectionUser || !connectionPassword || !connectionDatabase) {
-        this.logger.warn(
-          "No database connection provided, skipping connection"
-        );
-        return;
-      }
-
-      this.logger.info(`Connecting to database...`);
-
-      /**
-       * Write the actual connection logic here
-       */
-      const mysqlConnection = await mysql.createConnection({
-        host: connectionHost,
-        user: connectionUser,
-        password: connectionPassword,
-        database: connectionDatabase,
-      });
-
-      this.connection = drizzle(
-        mysqlConnection,
-        {
-          schema: schema,
-          mode: "default",
-        }
+      const connectionString = this.configService.get<string>(
+        "database.connectionURL"
       );
 
-      this.connected = true;
+      // Create mysql2 pool
+      this.pool = mysql.createPool({
+        uri: connectionString,
+        connectionLimit: 10,
+      });
+
+      // Drizzle wraps mysql pool
+      this.drizzle = drizzle(this.pool, {
+        schema: schema,
+        mode: "default",
+        logger: {
+          logQuery: (query, params) => {
+            this.logger.debug(`Query: ${query}`, { params });
+          },
+        },
+      });
+
       this.logger.info("Database connected successfully");
     } catch (error) {
       this.logger.error("Failed to connect to database", { error });
-      throw new CustomError(
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        "Error in creation of Database Connection"
-      );
+      throw error;
     }
   }
 
-  /**
-   * Disconnect from the database
-   */
   async disconnect(): Promise<void> {
-    if (this.connected) {
-      this.logger.info("Disconnecting from database...");
-
-      /**
-       * Write the actual disconnection logic here
-       */
-
-      this.connected = false;
+    if (this.pool) {
+      await this.pool.end();
       this.logger.info("Database disconnected");
     }
-  }
-
-  /**
-   * Check if the database is connected
-   * @returns boolean
-   */
-  isConnected(): boolean {
-    return this.connected;
-  }
-
-  /**
-   * Get the database connection
-   * @returns Promise<any>
-   */
-  getConnection(): Promise<any> {
-    if (!this.connected) {
-      throw new CustomError(
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        "Database not connected"
-      );
-    }
-    
-    /**
-     * Return the actual database connection here
-     */
-    return this.connection;
   }
 }

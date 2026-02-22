@@ -1,72 +1,100 @@
-import express, { Express } from "express";
-import { Dependencies } from "@/container/di.container";
-import RateLimit from "@/lib/rate-limit";
-import MorganLogger from "@/middleware/morgan-middleware";
+import express, { Application, Router } from "express";
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "@/container/tokens";
+import type { ILoggerService } from "@/logger/logger.service";
+import type { IConfigService, AppConfig } from "@/config/config.service";
 import ErrorHandler from "@/middleware/error-handler";
+import MorganLogger from "@/middleware/morgan-middleware";
 import ServerProtection from "@/middleware/service-protection";
+import RateLimit from "@/lib/rate-limit";
 
-import TodoRouter from "@/routes/task.routes";
-import TaskService from "@/services/task.service";
-import TaskController from "@/controllers/task.controller";
+export interface IApp {
+  getInstance(): Application;
+  setupMiddleware(): void;
+  setupRoutes(router: Router): void;
+  setupErrorHandling(): void;
+}
 
-export default class AppFactory {
-  constructor(private deps: Dependencies) {}
+@injectable()
+export class App implements IApp {
+  private app: Application;
 
-  public createApp(): Express {
-    const { logger, config } = this.deps;
+  constructor(
+    @inject(TOKENS.Logger) private logger: ILoggerService,
+    @inject(TOKENS.Config) private config: IConfigService
+  ) {
+    this.app = express();
+  }
 
-    const app: Express = express();
+  getInstance(): Application {
+    return this.app;
+  }
 
-    // Service protection initialization
-    const serviceProtection = new ServerProtection(
-      logger,
+  setupMiddleware(): void {
+    // Body parsing
+    this.app.use(express.json({ limit: "1mb" }));
+    this.app.use(express.urlencoded({ extended: true }));
+
+    // Morgan HTTP logging
+    const nodeEnv = this.config.get<string>("nodeEnv");
+    const morganLogger = new MorganLogger(
+      this.logger.getLogger(),
+      nodeEnv === "development" ? "dev" : "combined"
+    );
+    this.app.use(morganLogger.createMorganMiddleware());
+
+    // Security middleware
+    const securityConfig = this.config.get<AppConfig["security"]>("security");
+    const serverProtection = new ServerProtection(
+      this.logger.getLogger(),
       {
-        blockOnThreat: config.security.blockOnThreat,
-        logThreats: config.security.logThreats,
+        blockOnThreat: securityConfig.blockOnThreat,
+        logThreats: securityConfig.logThreats,
       },
-      config.security.allowedOrigins,
-      config.security.xssOptions
+      securityConfig.allowedOrigins,
+      securityConfig.xssOptions
     );
 
-    // CORS middleware
-    app.use(
-      serviceProtection.corsProtection({
-        allowedOrigins: config.security.allowedOrigins,
-        credentials: config.security.credentials,
+    this.app.use(
+      serverProtection.corsProtection({
+        allowedOrigins: securityConfig.allowedOrigins,
+        credentials: securityConfig.credentials,
       })
     );
+    this.app.use(serverProtection.miscProtection());
+    this.app.use(serverProtection.xssProtection());
 
-    // Morgan logging middleware
-    app.use(new MorganLogger(logger, "dev").createMorganMiddleware());
+    // Rate limiting
+    const rateLimitConfig = this.config.get<AppConfig["rateLimit"]>("rateLimit");
+    const rateLimit = new RateLimit(
+      this.logger.getLogger(),
+      rateLimitConfig.limit,
+      rateLimitConfig.windowSeconds
+    );
+    this.app.use(rateLimit.rateLimiter());
 
-    // Body parsing middleware
-    app.use(express.json({ limit: "1mb" }));
-    app.use(express.urlencoded({ extended: true }));
+    this.logger.info("Middleware configured");
+  }
 
-    // Rate limiting middleware
-    app.use(new RateLimit(logger, config.rateLimit.limit, config.rateLimit.windowSeconds).rateLimiter());
+  setupRoutes(router: Router): void {
+    this.app.use("/api/v1", router);
+    this.logger.info("Routes configured");
+  }
 
-    // XSS Protection middleware
-    app.use(serviceProtection.xssProtection());
-
-    // Cache-Control headers for all responses
-    app.use(serviceProtection.miscProtection());
-
-    // Routes
-    const taskService = new TaskService(this.deps);
-    const taskController = new TaskController(taskService, this.deps);
-    const todoRouter = new TodoRouter(taskController);
-    app.use("/taskId", todoRouter.router);
-
-    app.get("/", (req, res) => {
-      res.json({
-        message: "Welcome to the application!!",
+  setupErrorHandling(): void {
+    // 404 handler
+    this.app.use((req, res) => {
+      res.status(404).json({
+        success: false,
+        message: "Route not found",
+        path: req.path,
       });
     });
 
-    // Error handling middleware (must be last)
-    app.use(new ErrorHandler(logger).handle);
+    // Global error handler
+    const errorHandler = new ErrorHandler(this.logger.getLogger());
+    this.app.use(errorHandler.handle);
 
-    return app;
+    this.logger.info("Error handling configured");
   }
 }

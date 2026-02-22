@@ -1,24 +1,28 @@
-import { Dependencies } from "@/container/di.container";
+import { TOKENS } from "@/container/tokens";
+import type { ILoggerService } from "@/logger/logger.service";
 import TaskService from "@/services/task.service";
 import { Request, Response } from "express";
+import { inject, injectable } from "tsyringe";
+import { BaseController } from "./base.controller";
+import type { IResponseFactory } from "@/factories/response.factory";
+import asyncHandler from "@/lib/async-handler";
 
-export default class TaskController {
+@injectable()
+export default class TaskController extends BaseController {
   constructor(
-    private taskService: TaskService,
-    private deps: Dependencies
-  ) {}
+    @inject(TOKENS.TaskService) private taskService: TaskService,
+    @inject(TOKENS.Logger) logger: ILoggerService,
+    @inject(TOKENS.ResponseFactory) responseFactory: IResponseFactory
+  ) {
+    super(logger, responseFactory);
+  }
 
-  getTasks = async (req: Request, res: Response) => {
-    try {
-      const tasks = await this.taskService.getAllTasks();
-      res.status(200).json(tasks);
-    } catch (error) {
-      this.deps.logger.error("Error fetching tasks:", error);
-      res.status(500).json({ error: "Failed to retrieve tasks" });
-    }
-  };
+  getTasks = asyncHandler(async (req: Request, res: Response) => {
+    const tasks = await this.taskService.getAllTasks();
+    res.status(200).json(tasks);
+  });
 
-  createTask = async (req: Request, res: Response) => {
+  createTask = asyncHandler(async (req: Request, res: Response) => {
     const { title, description } = req.body;
     if (!title || !description) {
       return res
@@ -26,46 +30,35 @@ export default class TaskController {
         .json({ error: "Title and description are required" });
     }
 
-    try {
-      await this.taskService.createTask(title, description);
-      res.status(201).json({ message: "Task created successfully" });
-    } catch (error) {
-      this.deps.logger.error("Error creating task:", error);
-      res.status(500).json({ error: "Failed to create task" });
-    }
-  };
+    await this.taskService.createTask(title, description);
+    res.status(201).json({ message: "Task created successfully" });
+  });
 
-  deleteTask = async (req: Request, res: Response) => {
-    const { taskId } = req.params;
+  deleteTask = asyncHandler(async (req: Request, res: Response) => {
+    let { taskId } = req.params;
+    if (Array.isArray(taskId)) taskId = taskId[0];
+
     if (!taskId) {
       return res.status(400).json({ error: "Task ID is required" });
     }
 
-    try {
-      await this.taskService.deleteTask(taskId);
-      res.status(200).json({
-        message: "Task deleted successfully",
-      });
-    } catch (error: any) {
-      this.deps.logger.error("Error deleting task:", error);
-      res.status(500).json({ error: error.message || "Failed to delete task" });
-    }
-  };
+    await this.taskService.deleteTask(taskId);
+    res.status(200).json({
+      message: "Task deleted successfully",
+    });
+  });
 
-  toggleTask = async (req: Request, res: Response) => {
-    const { taskId } = req.params;
+  toggleTask = asyncHandler(async (req: Request, res: Response) => {
+    let { taskId } = req.params;
+    if (Array.isArray(taskId)) taskId = taskId[0];
+
     if (!taskId) {
       return res.status(400).json({ error: "Task ID is required" });
     }
 
-    try {
-      const currentStatus = await this.taskService.toggleTask(taskId);
-      res.status(200).json({
-        message: `Task has been marked as ${currentStatus ? "completed" : "incomplete"}`,
-      });
-    } catch (error) {
-      this.deps.logger.error("Error toggling task:", error);
-      res.status(500).json({ error: "Failed to toggle task" });
-    }
-  };
+    const currentStatus = await this.taskService.toggleTask(taskId);
+    res.status(200).json({
+      message: `Task has been marked as ${currentStatus ? "completed" : "incomplete"}`,
+    });
+  });
 }

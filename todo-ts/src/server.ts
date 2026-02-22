@@ -2,49 +2,56 @@ import "reflect-metadata";
 import "dotenv/config";
 
 // Import container configuration (must be after reflect-metadata)
-// import "@/container";
+import "@/container";
 
-import { DIContainer } from "@/container/di.container";
-import AppFactory from "@/app.factory";
+import { container } from "tsyringe";
+import { TOKENS } from "@/container/tokens";
+import { App } from "@/app.factory";
+import type { ILoggerService } from "@/logger/logger.service";
+import type { IConfigService } from "@/config/config.service";
+import type { IDrizzleService } from "@/databases/drizzle.service";
+import routes from "@/routes";
 
-async function startServer() {
+async function server() {
+  // Resolve services from container
+  const logger = container.resolve<ILoggerService>(TOKENS.Logger);
+  const config = container.resolve<IConfigService>(TOKENS.Config);
+  const databaseService = container.resolve<IDrizzleService>(TOKENS.DrizzleClient);
+  const app = container.resolve(App);
+
   try {
-    // Initialize dependency injection container
-    const container = DIContainer.getInstance();
-    const deps = await container.initialize();
-
     // Connect to database
-    await deps.databaseService.getClient().createConnection();
+    await databaseService.connect();
 
-    // Create Express app with injected dependencies
-    const app = new AppFactory(deps).createApp();
+    // Setup application
+    app.setupMiddleware();
+    app.setupRoutes(routes);
+    app.setupErrorHandling();
+
+    console.log(config)
 
     // Start server
-    const port = deps.config.port;
-    const server = app.listen(port, async () => {
-      deps.logger.info(`Server running on http://localhost:${port}`);
+    const port = config.get<number>("port");
+    const expressApp = app.getInstance();
+
+    expressApp.listen(port, () => {
+      logger.info(`Server running on port ${port}`);
+      logger.info(`Environment: ${config.get<string>("nodeEnv")}`);
     });
 
     // Graceful shutdown
-    process.on("SIGTERM", async () => {
-      deps.logger.info("SIGTERM received, shutting down gracefully");
-      server.close(async () => {
-        await container.cleanup();
-        process.exit(0);
-      });
-    });
+    const gracefulShutdown = async (signal: string) => {
+      logger.info(`${signal} received. Starting graceful shutdown...`);
+      await databaseService.disconnect();
+      process.exit(0);
+    };
 
-    process.on("SIGINT", async () => {
-      deps.logger.info("SIGINT received, shutting down gracefully");
-      server.close(async () => {
-        await container.cleanup();
-        process.exit(0);
-      });
-    });
+    process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+    process.on("SIGINT", () => gracefulShutdown("SIGINT"));
   } catch (error) {
-    console.error("Failed to start server:", error);
+    logger.error("Failed to start server", { error });
     process.exit(1);
   }
 }
 
-startServer();
+server();

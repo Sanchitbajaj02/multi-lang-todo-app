@@ -5,7 +5,6 @@ import cors from "cors";
 import { SanitizeOptions, CorsOptions, XssOptions } from "@/types/protection.types";
 import { Logger } from "winston";
 
-
 export default class ServerProtection {
   private logger: Logger;
   private sanizeOptions: SanitizeOptions;
