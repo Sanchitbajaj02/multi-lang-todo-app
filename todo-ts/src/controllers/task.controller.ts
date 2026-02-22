@@ -6,6 +6,7 @@ import { inject, injectable } from "tsyringe";
 import { BaseController } from "./base.controller";
 import type { IResponseFactory } from "@/factories/response.factory";
 import asyncHandler from "@/lib/async-handler";
+import { StatusCodes } from "http-status-codes";
 
 @injectable()
 export default class TaskController extends BaseController {
@@ -19,7 +20,7 @@ export default class TaskController extends BaseController {
 
   getTasks = asyncHandler(async (req: Request, res: Response) => {
     const tasks = await this.taskService.getAllTasks();
-    res.status(200).json(tasks);
+    this.sendSuccess(res, tasks, "Tasks retrieved successfully");
   });
 
   createTask = asyncHandler(async (req: Request, res: Response) => {
@@ -31,7 +32,7 @@ export default class TaskController extends BaseController {
     }
 
     await this.taskService.createTask(title, description);
-    res.status(201).json({ message: "Task created successfully" });
+    this.sendCreated(res, null, "Task created successfully");
   });
 
   deleteTask = asyncHandler(async (req: Request, res: Response) => {
@@ -43,9 +44,7 @@ export default class TaskController extends BaseController {
     }
 
     await this.taskService.deleteTask(taskId);
-    res.status(200).json({
-      message: "Task deleted successfully",
-    });
+    this.sendSuccess(res, null, "Task deleted successfully", StatusCodes.OK);
   });
 
   toggleTask = asyncHandler(async (req: Request, res: Response) => {
@@ -57,8 +56,12 @@ export default class TaskController extends BaseController {
     }
 
     const currentStatus = await this.taskService.toggleTask(taskId);
-    res.status(200).json({
-      message: `Task has been marked as ${currentStatus ? "completed" : "incomplete"}`,
-    });
+
+    this.sendSuccess(
+      res,
+      null,
+      `Task has been marked as ${currentStatus ? "completed" : "incomplete"}`,
+      StatusCodes.OK
+    );
   });
 }

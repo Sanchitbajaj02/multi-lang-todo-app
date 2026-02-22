@@ -33,12 +33,13 @@ export default class TaskService extends BaseService implements ITaskService {
   }
 
   getAllTasks = async (): Promise<Task[]> => {
-    const tasks = (await this.dbClient.select().from(taskSchema)) as Task[];
+    const tasks = (await this.db.select().from(taskSchema)) as Task[];
+    console.log("tasks::", tasks);
     return tasks;
   };
 
   createTask = async (title: string, description?: string | null): Promise<void> => {
-    await this.dbClient
+    await this.db
       .insert(taskSchema)
       .values({
         id: crypto.randomUUID(),
@@ -51,7 +52,7 @@ export default class TaskService extends BaseService implements ITaskService {
 
   deleteTask = async (id: string) => {
     // check if task exists
-    const task = (await this.dbClient
+    const task = (await this.db
       .select()
       .from(taskSchema)
       .where(eq(taskSchema.id, id))) as Task[];
@@ -60,11 +61,11 @@ export default class TaskService extends BaseService implements ITaskService {
       throw new CustomError(StatusCodes.NOT_FOUND, "Task not found");
     }
 
-    await this.dbClient.delete(taskSchema).where(eq(taskSchema.id, id)).execute();
+    await this.db.delete(taskSchema).where(eq(taskSchema.id, id)).execute();
   };
 
   toggleTask = async (id: string): Promise<boolean> => {
-    const task = (await this.dbClient
+    const task = (await this.db
       .select()
       .from(taskSchema)
       .where(eq(taskSchema.id, id))) as Task[];
@@ -77,7 +78,7 @@ export default class TaskService extends BaseService implements ITaskService {
     const currentCompleted = Boolean(existing.completed);
     const newCompleted = !currentCompleted;
 
-    await this.dbClient
+    await this.db
       .update(taskSchema)
       .set({ completed: newCompleted })
       .where(eq(taskSchema.id, id))

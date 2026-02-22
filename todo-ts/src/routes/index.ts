@@ -11,6 +11,6 @@ router.get("/health", (_req, res) => {
 });
 
 // API routes
-router.use("/todo", taskRoutes);
+router.use("/task", taskRoutes);
 
 export default router;

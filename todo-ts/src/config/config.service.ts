@@ -82,8 +82,7 @@ export class ConfigService implements IConfigService {
         ),
       },
       database: {
-        // connectionURL: this.getEnvironmentVariable<string>("DATABASE_URL"),
-        connectionURL: this.getEnvironmentVariable<string>("DATABASE_URL", ""),
+        connectionURL: this.getEnvironmentVariable<string>("DATABASE_URL"),
         connectionType: this.getEnvironmentVariable<string>(
           "DATABASE_TYPE",
           "mysql"

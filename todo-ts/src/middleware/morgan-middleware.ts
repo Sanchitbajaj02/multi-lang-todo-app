@@ -1,14 +1,12 @@
 import morgan from "morgan";
 import { Logger } from "winston";
+import { inject } from "tsyringe";
 
 export default class MorganLogger {
-  private logger: Logger;
-  private morganLogConfig: string;
-
-  constructor(logger: Logger, morganLogConfig: string) {
-    this.logger = logger;
-    this.morganLogConfig = morganLogConfig;
-  }
+  constructor(
+    @inject("Logger") private logger: Logger,
+    @inject("MorganLogConfig") private morganLogConfig: string
+  ) {}
 
   public createMorganMiddleware() {
     return morgan(this.morganLogConfig, {

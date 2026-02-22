@@ -28,8 +28,6 @@ async function server() {
     app.setupRoutes(routes);
     app.setupErrorHandling();
 
-    console.log(config)
-
     // Start server
     const port = config.get<number>("port");
     const expressApp = app.getInstance();
