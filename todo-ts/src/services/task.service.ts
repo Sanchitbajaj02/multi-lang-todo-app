@@ -33,7 +33,8 @@ export default class TaskService extends BaseService implements ITaskService {
   }
 
   getAllTasks = async (): Promise<Task[]> => {
-    const tasks = (await this.db.select().from(taskSchema)) as Task[];
+    console.log("get all tasks")
+    const tasks = await this.db.select().from(taskSchema) satisfies Task[];
     console.log("tasks::", tasks);
     return tasks;
   };

@@ -2,7 +2,7 @@ import { mysqlTable as table } from "drizzle-orm/mysql-core";
 import * as t from "drizzle-orm/mysql-core";
 
 export const taskSchema = table(
-  "task",
+  "tasks",
   {
     id: t.varchar("id", { length: 36 }).primaryKey(),
     title: t.varchar("title", { length: 100 }).notNull(),
