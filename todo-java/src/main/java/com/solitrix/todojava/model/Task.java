@@ -15,7 +15,7 @@ public class Task {
     @Column(length = 100, nullable = false)
     private String title;
 
-    @Column(length = 255)
+    @Column(length = 256)
     private String description;
 
     @Column(columnDefinition = "TINYINT(1)")

@@ -27,7 +27,7 @@ public class TaskController {
     }
 
     @PostMapping
-    public String createTask(@RequestParam String title, @RequestParam String description) {
+    public String createTask(@RequestParam String title, @RequestParam(required = false) String description) {
         taskService.createTask(title, description);
         return "redirect:/";
     }
